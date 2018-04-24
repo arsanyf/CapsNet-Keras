@@ -199,15 +199,27 @@ def load_mnist():
     y_test = to_categorical(y_test.astype('float32'))
     return (x_train, y_train), (x_test, y_test)
 
+def load_audiodata(path):
+    # sample audio data from DCASE Challenge 2017 -- Task 1
+    # TODO .. shuffle and split
+    x_train = np.load(path)
+    batch_size = x_train.shape[0]
+    print("dataset {}x{}x{}".format(x_train.shape[0], x_train.shape[1], x_train.shape[2])) # dataset 10x128x431
+    x_train = x_train.reshape(-1, x_train.shape[1], x_train.shape[2], 1).astype('float32')
+    y_train = to_categorical(np.zeros(batch_size).astype('float32'))
+    x_test = x_train
+    y_test = to_categorical(np.zeros(batch_size).astype('float32'))
+
+    return (x_train, y_train), (x_test, y_test), batch_size    
 
 if __name__ == "__main__":
-    import os
+    import os, sys
     import argparse
     from keras.preprocessing.image import ImageDataGenerator
     from keras import callbacks
 
     # setting the hyper parameters
-    parser = argparse.ArgumentParser(description="Capsule Network on MNIST.")
+    parser = argparse.ArgumentParser(description="Capsule Network on 3D Audio data.")
     parser.add_argument('--epochs', default=50, type=int)
     parser.add_argument('--batch_size', default=100, type=int)
     parser.add_argument('--lr', default=0.001, type=float,
@@ -229,6 +241,8 @@ if __name__ == "__main__":
                         help="Digit to manipulate")
     parser.add_argument('-w', '--weights', default=None,
                         help="The path of the saved weights. Should be specified when testing")
+    parser.add_argument('-z', '--audiodataset', default=None,
+                        help="The path of the audio dataset")
     args = parser.parse_args()
     print(args)
 
@@ -236,8 +250,9 @@ if __name__ == "__main__":
         os.makedirs(args.save_dir)
 
     # load data
-    (x_train, y_train), (x_test, y_test) = load_mnist()
-
+    #(x_train, y_train), (x_test, y_test) = load_mnist()
+    (x_train, y_train), (x_test, y_test), args.batch_size = load_audiodata(args.audiodataset)
+    
     # define model
     model, eval_model, manipulate_model = CapsNet(input_shape=x_train.shape[1:],
                                                   n_class=len(np.unique(np.argmax(y_train, 1))),
